@@ -4,34 +4,32 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Setup Environment
         run: |
           sudo apt update
-          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3
+          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3 libncurses-dev
 
       - name: Download Kernel Source
         run: |
-          # لێرەدا بەبێ دیاریکردنی لق (Branch) دایدەبەزێنین بۆ ئەوەی هەڵەی 128 نەیەت
-          git clone https://android.googlesource.com/kernel/gs --depth 1 kernel
-
-      - name: Patch and Config
-        run: |
-          cd kernel
-          # دروستکردنی ڕێکخستنی بنەڕەتی بۆ GKI (بۆ هەموو پیکسڵە نوێیەکان دەبێت)
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
-          
-          # چالاککردنی مۆدی مۆنیتۆر
-          echo "CONFIG_CFG80211=y" >> .config
-          echo "CONFIG_MAC80211=y" >> .config
-          echo "CONFIG_WLAN_VENDOR_BROADCOM=y" >> .config
+          # دابەزاندنی تەنها یەک لق کە زۆرترین جێگیری هەیە
+          git clone https://android.googlesource.com/kernel/gs --depth 1 -b android-gs-pixel-5.10 kernel
 
       - name: Build Kernel
         run: |
           cd kernel
-          # دەستپێکردنی دروستکردنەکە
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
+          # ئامادەکردنی ڕێکخستنی بنەڕەتی
+          export ARCH=arm64
+          export LLVM=1
+          make gki_defconfig
+          
+          # لێرەدا دەستکاری ڕێکخستنەکە دەکەین بۆ مۆدی مۆنیتۆر
+          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' .config
+          echo "CONFIG_MAC80211=y" >> .config
+          
+          # دەستپێکردنی دروستکردن
+          make -j$(nproc) ARCH=arm64 LLVM=1 LLVM_IAS=1
 
       - name: Upload
         uses: actions/upload-artifact@v4
