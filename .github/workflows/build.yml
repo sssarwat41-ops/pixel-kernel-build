@@ -13,25 +13,27 @@ jobs:
 
       - name: Download Kernel Source
         run: |
-          # لێرەدا ڕێڕەوەکەمان گۆڕی بۆ ئەوەی هەڵەی 128 نەیەت
-          git clone https://android.googlesource.com/kernel/gs --depth 1 -b android-gs-pixel-5.10 kernel
+          # لێرەدا بەبێ دیاریکردنی لق (Branch) دایدەبەزێنین بۆ ئەوەی هەڵەی 128 نەیەت
+          git clone https://android.googlesource.com/kernel/gs --depth 1 kernel
 
-      - name: Patch for Monitor Mode
+      - name: Patch and Config
         run: |
           cd kernel
-          # زیادکردنی مۆدی مۆنیتۆر بۆ ناو ڕێکخستنەکان
-          echo "CONFIG_CFG80211=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_MAC80211=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_WLAN_VENDOR_BROADCOM=y" >> arch/arm64/configs/gki_defconfig
+          # دروستکردنی ڕێکخستنی بنەڕەتی بۆ GKI (بۆ هەموو پیکسڵە نوێیەکان دەبێت)
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
+          
+          # چالاککردنی مۆدی مۆنیتۆر
+          echo "CONFIG_CFG80211=y" >> .config
+          echo "CONFIG_MAC80211=y" >> .config
+          echo "CONFIG_WLAN_VENDOR_BROADCOM=y" >> .config
 
       - name: Build Kernel
         run: |
           cd kernel
-          # دروستکردنی کێرناڵەکە بە سوودوەرگرتن لە کلانگ
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
+          # دەستپێکردنی دروستکردنەکە
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
 
-      - name: Check and Upload
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Pixel6Pro-Kernel
