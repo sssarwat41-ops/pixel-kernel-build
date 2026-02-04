@@ -1,4 +1,4 @@
-name: Build Pixel 6 Kernel
+name: Build Pixel 6 Pro Kernel
 on:
   workflow_dispatch:
 
@@ -9,15 +9,17 @@ jobs:
       - name: Setup Environment
         run: |
           sudo apt update
-          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git
+          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3
 
       - name: Download Kernel Source
         run: |
+          # لێرەدا ڕێڕەوەکەمان گۆڕی بۆ ئەوەی هەڵەی 128 نەیەت
           git clone https://android.googlesource.com/kernel/gs --depth 1 -b android-gs-pixel-5.10 kernel
 
       - name: Patch for Monitor Mode
         run: |
           cd kernel
+          # زیادکردنی مۆدی مۆنیتۆر بۆ ناو ڕێکخستنەکان
           echo "CONFIG_CFG80211=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_MAC80211=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_WLAN_VENDOR_BROADCOM=y" >> arch/arm64/configs/gki_defconfig
@@ -25,12 +27,12 @@ jobs:
       - name: Build Kernel
         run: |
           cd kernel
+          # دروستکردنی کێرناڵەکە بە سوودوەرگرتن لە کلانگ
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
 
-      - name: Upload Kernel
+      - name: Check and Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Pixel6-Kernel
+          name: Pixel6Pro-Kernel
           path: kernel/arch/arm64/boot/Image
-          
