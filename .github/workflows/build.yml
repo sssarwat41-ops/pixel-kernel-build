@@ -1,4 +1,4 @@
-name: Build Pixel 6 Pro Kernel (Public Fix)
+name: Build Pixel 6 Pro Kernel (Stable Link)
 on:
   workflow_dispatch:
 
@@ -13,13 +13,13 @@ jobs:
 
       - name: Download Source
         run: |
-          # بەکارهێنانی لینکێک کە پێویستی بە پاسۆرد نییە
-          git clone --depth 1 https://googlesource.googlesource.com/kernel/common kernel
+          # ئەمە لینکی فەرمی و تاقیکراوەی گووگڵە
+          git clone https://android.googlesource.com/kernel/common --depth 1 -b android-mainline kernel
           
       - name: Build
         run: |
           cd kernel
-          # ئامادەکردنی ڕێکخستنی GKI (کە پیکسڵ ٦ بەکاری دەهێنێت)
+          # دروستکردنی ڕێکخستنی بنەڕەتی
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
           
           # چالاککردنی مۆدی مۆنیتۆر
