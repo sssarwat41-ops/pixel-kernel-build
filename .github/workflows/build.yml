@@ -1,4 +1,4 @@
-name: Build Pixel 6 Pro Kernel (Final Fix)
+name: Build Pixel 6 Pro Kernel (Fix 100 Error)
 on:
   workflow_dispatch:
 
@@ -9,30 +9,25 @@ jobs:
       - name: Setup Environment
         run: |
           sudo apt update
-          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3- pip
-          # دابەزاندنی ئامرازی Repo ی فەرمی گووگڵ
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          sudo ln -sf ~/bin/repo /usr/bin/repo
+          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3
 
-      - name: Sync Source (No more 128 error)
+      - name: Download Source
         run: |
-          mkdir kernel && cd kernel
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-          # لێرەدا ڕاستەوخۆ دەچینە سەر سەرچاوەی فەرمی پیکسڵ ٦
-          repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-pixel-5.10 --depth=1
-          repo sync -c -j$(nproc) --no-tags --no-clone-bundle
-
-      - name: Build Kernel
+          # بەکارهێنانی لینکێکی جێگیرتر بۆ پیکسڵ ٦
+          git clone --depth 1 https://github.com/aosp-mirror/kernel_gs_google-modules_soc_gs --branch android-gs-pixel-5.10-android12 kernel
+          
+      - name: Build
         run: |
           cd kernel
-          # ئامادەکردنی کێرناڵەکە
-          BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh
-          
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
+          # زیادکردنی مۆدی مۆنیتۆر
+          echo "CONFIG_CFG80211=y" >> .config
+          echo "CONFIG_MAC80211=y" >> .config
+          # دەستپێکردنی دروستکردن
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Pixel6Pro-Kernel
-          path: out/android-gs-pixel-5.10/dist/Image
+          path: kernel/arch/arm64/boot/Image
