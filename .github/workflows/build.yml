@@ -33,3 +33,4 @@ jobs:
         with:
           name: Pixel6-Kernel
           path: kernel/arch/arm64/boot/Image
+          
