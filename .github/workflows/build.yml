@@ -1,0 +1,35 @@
+name: Build Pixel 6 Kernel
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Environment
+        run: |
+          sudo apt update
+          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git
+
+      - name: Download Kernel Source
+        run: |
+          git clone https://android.googlesource.com/kernel/gs --depth 1 -b android-gs-pixel-5.10 kernel
+
+      - name: Patch for Monitor Mode
+        run: |
+          cd kernel
+          echo "CONFIG_CFG80211=y" >> arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MAC80211=y" >> arch/arm64/configs/gki_defconfig
+          echo "CONFIG_WLAN_VENDOR_BROADCOM=y" >> arch/arm64/configs/gki_defconfig
+
+      - name: Build Kernel
+        run: |
+          cd kernel
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
+
+      - name: Upload Kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pixel6-Kernel
+          path: kernel/arch/arm64/boot/Image
