@@ -1,4 +1,4 @@
-name: Build Pixel 6 Pro Kernel (Fix 100 Error)
+name: Build Pixel 6 Pro Kernel (Public Fix)
 on:
   workflow_dispatch:
 
@@ -13,16 +13,19 @@ jobs:
 
       - name: Download Source
         run: |
-          # بەکارهێنانی لینکێکی جێگیرتر بۆ پیکسڵ ٦
-          git clone --depth 1 https://github.com/aosp-mirror/kernel_gs_google-modules_soc_gs --branch android-gs-pixel-5.10-android12 kernel
+          # بەکارهێنانی لینکێک کە پێویستی بە پاسۆرد نییە
+          git clone --depth 1 https://googlesource.googlesource.com/kernel/common kernel
           
       - name: Build
         run: |
           cd kernel
+          # ئامادەکردنی ڕێکخستنی GKI (کە پیکسڵ ٦ بەکاری دەهێنێت)
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
-          # زیادکردنی مۆدی مۆنیتۆر
+          
+          # چالاککردنی مۆدی مۆنیتۆر
           echo "CONFIG_CFG80211=y" >> .config
           echo "CONFIG_MAC80211=y" >> .config
+          
           # دەستپێکردنی دروستکردن
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
 
