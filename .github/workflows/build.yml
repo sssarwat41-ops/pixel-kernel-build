@@ -1,38 +1,38 @@
-name: Build Pixel 6 Pro Kernel
+name: Build Pixel 6 Pro Kernel (Final Fix)
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Setup Environment
         run: |
           sudo apt update
-          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3 libncurses-dev
+          sudo apt install -y bc build-essential flex bison libssl-dev libelf-dev clang lld llvm git python3- pip
+          # دابەزاندنی ئامرازی Repo ی فەرمی گووگڵ
+          mkdir -p ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: Download Kernel Source
+      - name: Sync Source (No more 128 error)
         run: |
-          # دابەزاندنی تەنها یەک لق کە زۆرترین جێگیری هەیە
-          git clone https://android.googlesource.com/kernel/gs --depth 1 -b android-gs-pixel-5.10 kernel
+          mkdir kernel && cd kernel
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          # لێرەدا ڕاستەوخۆ دەچینە سەر سەرچاوەی فەرمی پیکسڵ ٦
+          repo init -u https://android.googlesource.com/kernel/manifest -b android-gs-pixel-5.10 --depth=1
+          repo sync -c -j$(nproc) --no-tags --no-clone-bundle
 
       - name: Build Kernel
         run: |
           cd kernel
-          # ئامادەکردنی ڕێکخستنی بنەڕەتی
-          export ARCH=arm64
-          export LLVM=1
-          make gki_defconfig
+          # ئامادەکردنی کێرناڵەکە
+          BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh
           
-          # لێرەدا دەستکاری ڕێکخستنەکە دەکەین بۆ مۆدی مۆنیتۆر
-          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' .config
-          echo "CONFIG_MAC80211=y" >> .config
-          
-          # دەستپێکردنی دروستکردن
-          make -j$(nproc) ARCH=arm64 LLVM=1 LLVM_IAS=1
-
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Pixel6Pro-Kernel
-          path: kernel/arch/arm64/boot/Image
+          path: out/android-gs-pixel-5.10/dist/Image
