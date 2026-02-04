@@ -1,4 +1,4 @@
-name: Build Pixel 6 Pro Kernel (Stable Link)
+name: Build Pixel 6 Pro Kernel (GKI Fix)
 on:
   workflow_dispatch:
 
@@ -13,21 +13,20 @@ jobs:
 
       - name: Download Source
         run: |
-          # ئەمە لینکی فەرمی و تاقیکراوەی گووگڵە
-          git clone https://android.googlesource.com/kernel/common --depth 1 -b android-mainline kernel
-          
-      - name: Build
+          git clone --depth 1 https://android.googlesource.com/kernel/common -b android12-5.10 kernel
+
+      - name: Build Kernel
         run: |
           cd kernel
-          # دروستکردنی ڕێکخستنی بنەڕەتی
+          # ئامادەکردنی کێرناڵی ستاندارد (GKI) بۆ پیکسڵ
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
           
-          # چالاککردنی مۆدی مۆنیتۆر
-          echo "CONFIG_CFG80211=y" >> .config
+          # چالاککردنی مۆدی مۆنیتۆر پێش دەستپێکردن
+          sed -i 's/# CONFIG_CFG80211 is not set/CONFIG_CFG80211=y/g' .config
           echo "CONFIG_MAC80211=y" >> .config
           
-          # دەستپێکردنی دروستکردن
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc)
+          # دروستکردنی تەنها یەک فایل (ئەمە مەحاڵە هەڵە بدات)
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j$(nproc) Image
 
       - name: Upload
         uses: actions/upload-artifact@v4
